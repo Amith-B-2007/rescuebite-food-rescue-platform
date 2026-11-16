@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RescueBite | Surplus Food Rescue &amp; Redistribution Platform (SDG 2 &amp; SDG 12)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet Interactive Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <link rel="stylesheet" href="/css/styles.css?v=7" />
+</head>
+<body>
+    <!-- ==================== DUAL ROLE LOGIN SCREEN (FIRST SCREEN) ==================== -->
+    <div id="authPortalOverlay" class="auth-overlay">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="brand-icon auth-brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+                        <path d="M12 12 2.1 10.5"/>
+                        <path d="m15 5 6 6"/>
+                    </svg>
+                </div>
+                <h1>Welcome to Rescue<span>Bite</span></h1>
+                <p>Surplus Food Rescue &amp; Priority Redistribution Platform (SDG 2 &amp; SDG 12)</p>
+                <div class="sdg-pills" style="justify-content:center; margin-top:10px;">
+                    <span class="sdg-badge sdg-2"><span class="sdg-num">SDG 2</span> Zero Hunger</span>
+                    <span class="sdg-badge sdg-12"><span class="sdg-num">SDG 12</span> Responsible Consumption</span>
+                </div>
+            </div>
+
+            <div class="auth-cards-grid">
+                <!-- 1. FOOD DONOR LOGIN CARD -->
+                <div class="auth-role-card donor-auth-card">
+                    <div class="auth-card-badge">PORTAL 1 • FOOD DONOR</div>
+                    <h2>🍽️ Food Donor Login</h2>
+                    <p class="auth-role-desc">For Restaurants, University Hostels, Wedding &amp; Event Halls to post surplus food batches.</p>
+
+                    <form onsubmit="handleRoleLogin(event, 'DONOR')" class="auth-form">
+                        <div class="form-group">
+                            <label for="donorLoginEmail">Donor Email / Login ID *</label>
+                            <input type="email" id="donorLoginEmail" required value="donor@rescuebite.org" placeholder="donor@rescuebite.org" />
+                        </div>
+                        <div class="form-group">
+                            <label for="donorLoginPass">Password *</label>
+                            <input type="password" id="donorLoginPass" required value="donor123" placeholder="••••••••" />
+                        </div>
+                        <div class="form-group">
+                            <label for="donorLoginOrg">Organization / Kitchen Name *</label>
+                            <input type="text" id="donorLoginOrg" required value="Grand Royal Convention Hall" placeholder="e.g., IIT Hostel Mess or Olive Bistro" />
+                        </div>
+                        <div class="demo-cred-hint">
+                            <span>Demo ID: <code>donor@rescuebite.org</code></span>
+                            <span>Pass: <code>donor123</code></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:6px;">
+                            Login as Food Donor &rarr;
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 2. NGO / VOLUNTEER HUB LOGIN CARD -->
+                <div class="auth-role-card ngo-auth-card">
+                    <div class="auth-card-badge ngo-badge">PORTAL 2 • NGO / VOLUNTEER HUB</div>
+                    <h2>🏢 NGO / Volunteer Hub Login</h2>
+                    <p class="auth-role-desc">For Shelters, NGOs &amp; Volunteers to monitor the PriorityQueue, claim batches &amp; track pickups.</p>
+
+                    <form onsubmit="handleRoleLogin(event, 'NGO')" class="auth-form">
+                        <div class="form-group">
+                            <label for="ngoLoginEmail">NGO / Volunteer Email ID *</label>
+                            <input type="email" id="ngoLoginEmail" required value="ngo@rescuebite.org" placeholder="ngo@rescuebite.org" />
+                        </div>
+                        <div class="form-group">
+                            <label for="ngoLoginPass">Password *</label>
+                            <input type="password" id="ngoLoginPass" required value="ngo123" placeholder="••••••••" />
+                        </div>
+                        <div class="form-group">
+                            <label for="ngoLoginHubSelect">Select Your NGO / Volunteer Hub *</label>
+                            <select id="ngoLoginHubSelect">
+                                <option value="12.9615,77.6100,Robin Hood Army — Central Hub (MG Road)">Robin Hood Army — Central Hub (MG Road)</option>
+                                <option value="12.9290,77.5825,Akshaya Trust Shelter — South Hub (Jayanagar)">Akshaya Trust Shelter — South Hub (Jayanagar)</option>
+                                <option value="12.9719,77.6412,Annapurna Kitchen — East Hub (Indiranagar)">Annapurna Kitchen — East Hub (Indiranagar)</option>
+                                <option value="13.0012,77.5680,Feeding India Youth — North Hub (Malleshwaram)">Feeding India Youth — North Hub (Malleshwaram)</option>
+                                <option value="12.9352,77.6245,Roti Bank Foundation — Koramangala Hub">Roti Bank Foundation — Koramangala Hub</option>
+                            </select>
+                        </div>
+                        <div class="demo-cred-hint">
+                            <span>Demo ID: <code>ngo@rescuebite.org</code></span>
+                            <span>Pass: <code>ngo123</code></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:6px; background: linear-gradient(135deg, #2563eb, #1d4ed8);">
+                            Login as NGO / Volunteer Hub &rarr;
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top SDG & System Status Bar -->
+    <div class="top-banner">
+        <div class="container top-banner-inner">
+            <div class="sdg-pills">
+                <span class="sdg-badge sdg-2">
+                    <span class="sdg-num">SDG 2</span> Zero Hunger
+                </span>
+                <span class="sdg-badge sdg-12">
+                    <span class="sdg-num">SDG 12</span> Responsible Consumption &amp; Production
+                </span>
+                <span class="engine-badge" id="backendStatusBadge">
+                    <span class="pulse-dot"></span>
+                    <span id="backendStatusText">Java 21 PriorityQueue&lt;FoodBatch&gt; + Persistent DB Active</span>
+                </span>
+                <span class="engine-badge" id="activeUserRoleBadge" style="background: rgba(59, 130, 246, 0.16); color: #93c5fd; border-color: rgba(59, 130, 246, 0.35);">
+                    👤 Role: NGO / Volunteer Hub
+                </span>
+            </div>
+            <div class="ngo-selector-wrap">
+                <label for="ngoHubSelect" class="ngo-label role-ngo-only">Active NGO / Volunteer Hub:</label>
+                <select id="ngoHubSelect" class="ngo-select role-ngo-only">
+                    <option value="12.9615,77.6100,Robin Hood Army — Central Hub (MG Road)">Robin Hood Army — Central Hub (MG Road)</option>
+                    <option value="12.9290,77.5825,Akshaya Trust Shelter — South Hub (Jayanagar)">Akshaya Trust Shelter — South Hub (Jayanagar)</option>
+                    <option value="12.9719,77.6412,Annapurna Kitchen — East Hub (Indiranagar)">Annapurna Kitchen — East Hub (Indiranagar)</option>
+                    <option value="13.0012,77.5680,Feeding India Youth — North Hub (Malleshwaram)">Feeding India Youth — North Hub (Malleshwaram)</option>
+                    <option value="12.9352,77.6245,Roti Bank Foundation — Koramangala Hub">Roti Bank Foundation — Koramangala Hub</option>
+                    <option value="12.9698,77.7499,Goonj Relief Kitchen — Whitefield Hub">Goonj Relief Kitchen — Whitefield Hub</option>
+                    <option value="12.9116,77.6389,SevaSadan Community Shelter — HSR Layout Hub">SevaSadan Community Shelter — HSR Layout Hub</option>
+                </select>
+                <button type="button" class="btn-chip role-ngo-only" onclick="openAddNgoModal()" title="Register a new NGO or Volunteer Hub">+ Add Hub</button>
+                <button type="button" class="btn-chip" onclick="openAuthPortalOverlay()" title="Switch between Food Donor and NGO/Volunteer Login">⇄ Switch Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Header -->
+    <header class="navbar">
+        <div class="container navbar-inner">
+            <div class="brand" onclick="switchRoleDefaultTab()">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+                        <path d="M12 12 2.1 10.5"/>
+                        <path d="m15 5 6 6"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="brand-title">Rescue<span>Bite</span></div>
+                    <div class="brand-subtitle" id="portalHeaderSubtitle">Surplus Food Rescue &amp; Priority Redistribution</div>
+                </div>
+            </div>
+
+            <nav class="nav-tabs" role="tablist">
+                <!-- NGO-ONLY TABS -->
+                <button class="nav-tab role-ngo-only active" data-tab="dashboard" onclick="switchTab('dashboard')">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                    Live Rescue Radar &amp; Queue
+                </button>
+                <button class="nav-tab role-ngo-only" data-tab="tracker" onclick="switchTab('tracker')">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                    NGO Pickup Tracker <span class="tab-counter" id="trackerCountBadge">0</span>
+                </button>
+                <button class="nav-tab role-ngo-only" data-tab="architecture" onclick="switchTab('architecture')">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    Java PriorityQueue &amp; SQL
+                </button>
+
+                <!-- DONOR-ONLY TABS -->
+                <button class="nav-tab role-donor-only hidden" data-tab="donor" onclick="switchTab('donor')">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    Post Surplus Food
+                </button>
+                <button class="nav-tab role-donor-only hidden" data-tab="donor-batches" onclick="switchTab('donor-batches')">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    My Posted Batches &amp; Pickup Status <span class="tab-counter" id="donorBatchesCountBadge">0</span>
+                </button>
+            </nav>
+
+            <div class="nav-actions">
+                <button class="btn btn-warning-outline role-donor-only hidden" onclick="triggerSimulatedBatch()" title="Simulate an urgent food batch from a hotel/hostel for live demo">
+                    ⚡ Quick Demo Food Drop
+                </button>
+                <button class="btn btn-primary role-ngo-only" onclick="openAddNgoModal()">
+                    + Add NGO / Volunteer Hub
+                </button>
+                <button class="btn btn-secondary" onclick="openAuthPortalOverlay()">
+                    ⇄ Switch Login
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Real-Time Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- KPI Impact & PriorityQueue Summary Strip -->
+    <section class="kpi-strip">
+        <div class="container kpi-grid">
+            <div class="kpi-card kpi-head-card">
+                <div class="kpi-label">
+                    <span class="mono-tag">queue.peek()</span> #1 Urgent Head Batch
+                </div>
+                <div class="kpi-value-row">
+                    <span class="kpi-value" id="kpiHeadId">FB-101</span>
+                    <span class="urgency-pill CRITICAL" id="kpiHeadTimer">42m left</span>
+                </div>
+                <div class="kpi-sub" id="kpiHeadTitle">Grand Royal Convention Hall</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-label">Active Queue Batches</div>
+                <div class="kpi-value-row">
+                    <span class="kpi-value" id="kpiActiveCount">6</span>
+                    <span class="kpi-badge-danger" id="kpiCriticalCount">2 Critical (&lt;60m)</span>
+                </div>
+                <div class="kpi-sub">Sorted by Java Min-Heap Urgency</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-label">Available Surplus Meals</div>
+                <div class="kpi-value-row">
+                    <span class="kpi-value" id="kpiAvailableServings">550</span>
+                    <span class="kpi-unit">servings</span>
+                </div>
+                <div class="kpi-sub">Awaiting NGO claim &amp; pickup</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-label">Meals Rescued (SDG 2)</div>
+                <div class="kpi-value-row">
+                    <span class="kpi-value text-emerald" id="kpiMealsRescued">1,370</span>
+                    <span class="kpi-unit">meals</span>
+                </div>
+                <div class="kpi-sub">Redistributed to local shelters</div>
+            </div>
+
+            <div class="kpi-card">
+                <div class="kpi-label">Food Saved &amp; CO₂ Prevented (SDG 12)</div>
+                <div class="kpi-value-row">
+                    <span class="kpi-value text-teal" id="kpiWeightSaved">466.5 kg</span>
+                    <span class="kpi-badge-eco" id="kpiCo2Saved">-1,166 kg CO₂e</span>
+                </div>
+                <div class="kpi-sub">Zero landfill waste verification</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== TAB 1: LIVE RESCUE RADAR & PRIORITY QUEUE ==================== -->
+    <main class="container main-content">
+        <div id="tab-dashboard" class="tab-pane active">
+            <!-- Top Row: Interactive Geo Map + Java PriorityQueue Min-Heap Visualizer & Live Alerts -->
+            <div class="dashboard-top-grid">
+                <!-- Interactive Map Card -->
+                <div class="panel map-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                Live Geo-Redistribution Map &amp; Haversine Distance Radar
+                            </h2>
+                            <p class="panel-subtitle">Click any food batch marker or card to inspect the Haversine distance route &amp; ETA feasibility before expiry.</p>
+                        </div>
+                        <div class="map-legend">
+                            <span class="legend-item"><i class="dot dot-critical"></i> Critical (&lt;1h)</span>
+                            <span class="legend-item"><i class="dot dot-high"></i> High (&lt;2.5h)</span>
+                            <span class="legend-item"><i class="dot dot-safe"></i> Medium/Safe</span>
+                            <span class="legend-item"><i class="dot dot-ngo"></i> Active NGO Hub</span>
+                            <button type="button" class="btn-chip" onclick="fitAllMapPins()">🔍 Fit All Pins</button>
+                        </div>
+                    </div>
+                    <div id="rescueMap" class="rescue-map"></div>
+                    <!-- Haversine Distance Calculation Bar -->
+                    <div class="distance-formula-bar" id="distanceFormulaBar">
+                        <div class="formula-left">
+                            <span class="formula-tag">HAVERSINE FORMULA</span>
+                            <code id="formulaCalcText">d = 2r · arcsin(√[sin²(Δφ/2) + cos(φ₁)cos(φ₂)sin²(Δλ/2)])</code>
+                        </div>
+                        <div class="formula-right" id="selectedRouteSummary">
+                            Select any batch to view exact NGO-to-Donor distance &amp; travel ETA.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Java PriorityQueue Visualizer + Real-Time Alert Stream -->
+                <div class="side-stack">
+                    <!-- Java PriorityQueue Min-Heap Visualizer -->
+                    <div class="panel heap-panel">
+                        <div class="panel-header">
+                            <div>
+                                <h2 class="panel-title">
+                                    <span class="mono-badge">PriorityQueue&lt;FoodBatch&gt;</span> Live Min-Heap Order
+                                </h2>
+                                <p class="panel-subtitle">Ranked automatically by <code>FoodBatch.compareTo()</code> (expiry window + perishability)</p>
+                            </div>
+                        </div>
+                        <div class="heap-nodes-container" id="heapVisualizer">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Real-Time Alerts Panel -->
+                    <div class="panel alerts-panel">
+                        <div class="panel-header">
+                            <div>
+                                <h2 class="panel-title">
+                                    <span class="live-indicator"></span> Real-Time NGO Alert Feed
+                                </h2>
+                                <p class="panel-subtitle">Instant notifications for urgent surplus drops &amp; pickup dispatches</p>
+                            </div>
+                            <span class="badge-count" id="alertTotalBadge">0</span>
+                        </div>
+                        <div class="alerts-list" id="alertsFeed">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Priority-Ranked Food Batches Grid -->
+            <div class="panel batches-section">
+                <div class="panel-header batches-header">
+                    <div>
+                        <h2 class="panel-title">Surplus Food Batches — Ranked by Expiry Urgency</h2>
+                        <p class="panel-subtitle">Polled in exact <code>PriorityQueue.poll()</code> order so the most perishable batches are rescued first.</p>
+                    </div>
+                    <div class="filter-bar">
+                        <div class="filter-pills">
+                            <button class="filter-btn active" data-filter="ALL" onclick="setBatchFilter('ALL', this)">All Active &amp; In-Transit</button>
+                            <button class="filter-btn" data-filter="CRITICAL" onclick="setBatchFilter('CRITICAL', this)">🔥 Critical (&lt;60m)</button>
+                            <button class="filter-btn" data-filter="VEG" onclick="setBatchFilter('VEG', this)">🌱 Pure Veg / Vegan</button>
+                            <button class="filter-btn" data-filter="FEASIBLE" onclick="setBatchFilter('FEASIBLE', this)">✅ Reachable Before Expiry</button>
+                        </div>
+                        <input type="search" id="batchSearchInput" class="search-input" placeholder="Search donor, dish, or area..." oninput="renderAll()" />
+                    </div>
+                </div>
+
+                <div class="batches-grid" id="batchesGrid">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: DONOR PORTAL (POST SURPLUS FOOD) ==================== -->
+        <div id="tab-donor" class="tab-pane">
+            <div class="donor-layout">
+                <div class="panel donor-form-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">Post Surplus Food Batch (Donor Portal)</h2>
+                            <p class="panel-subtitle">Restaurants, University Hostels, and Event Halls can list edible surplus food in under 30 seconds.</p>
+                        </div>
+                        <div class="preset-buttons">
+                            <span class="preset-label">Quick Demo Fill:</span>
+                            <button type="button" class="btn-chip" onclick="fillDonorPreset('wedding')">🏛️ Wedding Banquet (Critical 40m)</button>
+                            <button type="button" class="btn-chip" onclick="fillDonorPreset('hostel')">🏫 Hostel Night Mess (65m)</button>
+                            <button type="button" class="btn-chip" onclick="fillDonorPreset('bakery')">🥐 Bakery Surplus (180m)</button>
+                        </div>
+                    </div>
+
+                    <form id="donorPostForm" class="donor-form" onsubmit="submitDonorBatch(event)">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="donorName">Donor Organization Name *</label>
+                                <input type="text" id="donorName" required placeholder="e.g., Grand Regency Banquet Hall or IIT Hostel Block B" />
+                            </div>
+                            <div class="form-group">
+                                <label for="donorType">Donor Category *</label>
+                                <select id="donorType" required>
+                                    <option value="RESTAURANT">🍽️ Restaurant / Cafe</option>
+                                    <option value="HOSTEL">🏫 University / College Hostel Mess</option>
+                                    <option value="EVENT_HALL">🏛️ Wedding / Convention Hall</option>
+                                    <option value="CAMPUS_MESS">🏢 Corporate / Tech Park Cafeteria</option>
+                                    <option value="HOTEL">🏨 Hotel / Catering Kitchen</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="foodTitle">Surplus Food Description &amp; Items *</label>
+                                <input type="text" id="foodTitle" required placeholder="e.g., 120 Chapatis, Paneer Butter Masala, Steamed Rice & Dal" />
+                            </div>
+                            <div class="form-group">
+                                <label for="contactPhone">Pickup Coordinator Phone *</label>
+                                <input type="text" id="contactPhone" required placeholder="+91 98450 12345" value="+91 98450 67890" />
+                            </div>
+                        </div>
+
+                        <div class="form-row four-col">
+                            <div class="form-group">
+                                <label for="foodCategory">Food Perishability Type *</label>
+                                <select id="foodCategory" onchange="updatePriorityPreview()">
+                                    <option value="COOKED_MEALS">Cooked Hot Meals (High Perishability)</option>
+                                    <option value="EVENT_BUFFET">Event Buffet Trays (High Perishability)</option>
+                                    <option value="DAIRY_PACKAGED">Dairy &amp; Chilled Items</option>
+                                    <option value="BAKERY">Bakery &amp; Bread Loaves</option>
+                                    <option value="PRODUCE">Fresh Fruits &amp; Produce</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="dietaryType">Dietary Classification *</label>
+                                <select id="dietaryType">
+                                    <option value="VEG">🟢 Vegetarian (VEG)</option>
+                                    <option value="NON_VEG">🔴 Non-Vegetarian (NON-VEG)</option>
+                                    <option value="VEGAN">🌿 Vegan (Plant-Based)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="servingsInput">Quantity (Servings) *</label>
+                                <input type="number" id="servingsInput" min="5" max="2000" value="80" required oninput="updatePriorityPreview()" />
+                            </div>
+                            <div class="form-group">
+                                <label for="weightInput">Estimated Weight (kg) *</label>
+                                <input type="number" id="weightInput" min="1" max="1000" step="0.5" value="28.0" required />
+                            </div>
+                        </div>
+
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="expiryMinutes">Safe Consumption / Expiry Window (Minutes from now) *</label>
+                                <div class="slider-wrap">
+                                    <input type="range" id="expiryMinutesSlider" min="20" max="360" step="5" value="50" oninput="syncExpiryInput(this.value)" />
+                                    <input type="number" id="expiryMinutes" min="15" max="720" value="50" required oninput="syncExpirySlider(this.value)" />
+                                    <span class="unit-tag">mins</span>
+                                </div>
+                                <small class="field-hint">Batches &le; 60 mins trigger a CRITICAL PriorityQueue insertion alert.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="pickupAddress">Pickup Location Address (Share Live Location) *</label>
+                                <div class="live-loc-input-group">
+                                    <input type="text" id="pickupAddress" required placeholder="Click 'Share Live Location' or type pickup address..." />
+                                    <button type="button" class="btn btn-live-loc" onclick="shareDonorLiveLocation()">
+                                        📍 Share Live Location
+                                    </button>
+                                </div>
+                                <input type="hidden" id="donorLat" value="12.9756" />
+                                <input type="hidden" id="donorLon" value="77.6066" />
+                                <small class="field-hint" id="donorLiveLocStatus">Click <strong>📍 Share Live Location</strong> to attach your live GPS pickup pin for NGO routing.</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="storageNotes">Hygiene, Packaging &amp; Storage Instructions</label>
+                            <textarea id="storageNotes" rows="2" placeholder="e.g., Stored in food-grade stainless steel containers at 65°C. Bring insulated carrier bags.">Stored in hot-hold stainless steel containers. Hygienically packed and ready at security gate.</textarea>
+                        </div>
+
+                        <!-- Feature 1: FSSAI Food Safety & Hygiene Checklist -->
+                        <div class="hygiene-checklist-box">
+                            <div class="hygiene-checklist-title">🛡️ Mandatory FSSAI Food Safety &amp; Hygiene Checklist (Auto-Generates 4-Digit Pickup OTP)</div>
+                            <div class="hygiene-checks-grid">
+                                <label class="check-label">
+                                    <input type="checkbox" checked required />
+                                    <span>Prepared within safe 3-hour window &amp; unserved/untouched</span>
+                                </label>
+                                <label class="check-label">
+                                    <input type="checkbox" checked required />
+                                    <span>Temperature maintained (&gt;60°C hot-hold or &lt;5°C chilled)</span>
+                                </label>
+                                <label class="check-label">
+                                    <input type="checkbox" checked required />
+                                    <span>Packed in clean, food-grade sealed containers</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Live Java PriorityQueue Insertion Preview Box -->
+                        <div class="pq-insertion-preview" id="pqInsertionPreview">
+                            <div class="pq-preview-title">
+                                <span>⚙️ Live Java <code>PriorityQueue.offer(batch)</code> Simulation</span>
+                                <span class="urgency-pill CRITICAL" id="previewUrgencyBadge">CRITICAL WINDOW</span>
+                            </div>
+                            <p id="previewInsertionText">
+                                Based on a <strong>50 min</strong> expiry window and <strong>COOKED_MEALS</strong> perishability, this batch will have a Heap Key of <strong>41.80</strong> and be inserted at <strong>Rank #2</strong> in the PriorityQueue.
+                            </p>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                🚀 Publish to Java PriorityQueue &amp; Broadcast NGO Alert
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2B: DONOR'S POSTED BATCHES & PICKUP STATUS ==================== -->
+        <div id="tab-donor-batches" class="tab-pane">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">📦 My Posted Surplus Batches &amp; Live NGO Pickup Status</h2>
+                        <p class="panel-subtitle">Monitor your listed food batches in the Java PriorityQueue and see which NGO volunteer is assigned to pick them up.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="switchTab('donor')">+ Post Another Batch</button>
+                </div>
+                <div class="tracker-list" id="donorBatchesListContainer">
+                    <!-- Populated dynamically for Donor Role -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 3: PICKUP STATUS TRACKER ==================== -->
+        <div id="tab-tracker" class="tab-pane">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <h2 class="panel-title">Live NGO Pickup &amp; Redistribution Status Tracker</h2>
+                        <p class="panel-subtitle">End-to-end chain-of-custody tracking from Donor Kitchen &rarr; Volunteer Dispatch &rarr; Shelter Handover.</p>
+                    </div>
+                </div>
+                <div class="tracker-list" id="trackerListContainer">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 4: JAVA PRIORITYQUEUE & SQL ARCHITECTURE ==================== -->
+        <div id="tab-architecture" class="tab-pane">
+            <div class="arch-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">1. Java <code>PriorityQueue&lt;FoodBatch&gt;</code> Engine (`FoodBatch.java`)</h2>
+                            <p class="panel-subtitle">Min-Heap comparator implementation ranking batches by expiry urgency &amp; perishability factor.</p>
+                        </div>
+                        <span class="mono-badge">src/main/java/com/foodrescue/model/FoodBatch.java</span>
+                    </div>
+                    <pre class="code-block"><code>public class FoodBatch implements Comparable&lt;FoodBatch&gt; {
+    private String id;
+    private String donorName;
+    private Instant expiryTime;
+    private int servings;
+    private String category;
+    private String status; // AVAILABLE -&gt; CLAIMED -&gt; EN_ROUTE -&gt; PICKED_UP -&gt; DELIVERED
+
+    public double getPriorityHeapKey() {
+        double minutesLeft = Duration.between(Instant.now(), expiryTime).getSeconds() / 60.0;
+        double perishabilityMultiplier = switch (category) {
+            case "COOKED_MEALS", "EVENT_BUFFET" -&gt; 0.90; // Most perishable
+            case "DAIRY_PACKAGED" -&gt; 0.95;
+            case "BAKERY" -&gt; 1.00;
+            default -&gt; 1.05;
+        };
+        double volumeBonus = Math.min(10.0, servings / 25.0);
+        return (minutesLeft * perishabilityMultiplier) - volumeBonus;
+    }
+
+    @Override
+    public int compareTo(FoodBatch other) {
+        // Active unclaimed batches always precede claimed/completed ones in Min-Heap
+        boolean thisActive = "AVAILABLE".equals(this.status) &amp;&amp; getSecondsUntilExpiry() &gt; 0;
+        boolean otherActive = "AVAILABLE".equals(other.status) &amp;&amp; other.getSecondsUntilExpiry() &gt; 0;
+        if (thisActive != otherActive) return thisActive ? -1 : 1;
+
+        return Double.compare(this.getPriorityHeapKey(), other.getPriorityHeapKey());
+    }
+}</code></pre>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">2. Haversine Formula &amp; Expiry Feasibility (`DistanceCalculator.java`)</h2>
+                            <p class="panel-subtitle">Computes great-circle distance between Donor &amp; NGO coordinates and verifies arrival before food expiry.</p>
+                        </div>
+                        <span class="mono-badge">src/main/java/com/foodrescue/util/DistanceCalculator.java</span>
+                    </div>
+                    <pre class="code-block"><code>public class DistanceCalculator {
+    private static final double EARTH_RADIUS_KM = 6371.0;
+    private static final double AVERAGE_CITY_SPEED_KMH = 28.0;
+
+    public static double calculateHaversineDistanceKm(
+            double lat1, double lon1, double lat2, double lon2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.pow(Math.sin(dLat / 2), 2)
+                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                 * Math.pow(Math.sin(dLon / 2), 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return Math.round(EARTH_RADIUS_KM * c * 100.0) / 100.0;
+    }
+
+    public static boolean isPickupFeasible(double distanceKm, long minutesUntilExpiry) {
+        int etaMinutes = (int) Math.ceil((distanceKm / AVERAGE_CITY_SPEED_KMH) * 60.0) + 10;
+        return minutesUntilExpiry &gt;= etaMinutes;
+    }
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==================== CLAIM BATCH MODAL ==================== -->
+    <div id="claimModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Claim Surplus Food Batch</h3>
+                <button class="modal-close" onclick="closeClaimModal()">&times;</button>
+            </div>
+            <form id="claimForm" onsubmit="confirmClaimBatch(event)">
+                <input type="hidden" id="claimBatchId" />
+                <div class="modal-batch-summary" id="claimBatchSummary"></div>
+                <div class="form-group">
+                    <label for="claimNgoName">Claiming NGO / Shelter Partner *</label>
+                    <input type="text" id="claimNgoName" required />
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group">
+                        <label for="claimVolunteerName">Assigned Volunteer Name *</label>
+                        <input type="text" id="claimVolunteerName" required value="Vikram Rao" />
+                    </div>
+                    <div class="form-group">
+                        <label for="claimVolunteerPhone">Volunteer Contact Number *</label>
+                        <input type="text" id="claimVolunteerPhone" required value="+91 98802 33441" />
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeClaimModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm Claim &amp; Dispatch Volunteer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== ADD NGO / VOLUNTEER HUB MODAL ==================== -->
+    <div id="addNgoModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add New NGO / Volunteer Hub</h3>
+                <button class="modal-close" onclick="closeAddNgoModal()">&times;</button>
+            </div>
+            <form id="addNgoForm" onsubmit="submitNewNgoHub(event)">
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="newNgoName">NGO / Shelter / Volunteer Hub Name *</label>
+                    <input type="text" id="newNgoName" required placeholder="e.g., ISKCON Akshaya Patra — Rajajinagar Hub" />
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label for="newNgoAddress">Hub Location Address (Share Live Location) *</label>
+                    <div class="live-loc-input-group">
+                        <input type="text" id="newNgoAddress" required value="Rajajinagar West Hub, Near Metro Station" placeholder="Click 'Share Live Location' or type hub address..." />
+                        <button type="button" class="btn btn-live-loc" onclick="shareNgoLiveLocation()">
+                            📍 Share Live Location
+                        </button>
+                    </div>
+                    <input type="hidden" id="newNgoLat" value="12.9915" />
+                    <input type="hidden" id="newNgoLon" value="77.5521" />
+                    <small class="field-hint" id="ngoLiveLocStatus">Click <strong>📍 Share Live Location</strong> to lock your NGO Hub's live GPS coordinates.</small>
+                </div>
+                <div class="form-row two-col">
+                    <div class="form-group">
+                        <label for="newNgoVolunteer">Lead Volunteer Coordinator *</label>
+                        <input type="text" id="newNgoVolunteer" required value="Ananya Sharma" />
+                    </div>
+                    <div class="form-group">
+                        <label for="newNgoPhone">Coordinator Phone *</label>
+                        <input type="text" id="newNgoPhone" required value="+91 98452 77889" />
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddNgoModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add NGO Hub &amp; Switch Active Hub</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="/js/app.js?v=7"></script>
+</body>
+</html>
