@@ -199,7 +199,10 @@ function renderBatchesGrid() {
     const query = (document.getElementById('batchSearchInput')?.value || '').toLowerCase().trim();
 
     const filtered = appState.batches.filter(b => {
-        if (b.status === 'DELIVERED') return false;
+        if (appState.activeFilter === 'BIOGAS') {
+            return b.status === 'EXPIRED' || b.status === 'COMPOST_DIVERTED' || b.secondsUntilExpiry <= 0;
+        }
+        if (b.status === 'DELIVERED' || b.status === 'COMPOST_DIVERTED') return false;
         if (appState.activeFilter === 'CRITICAL' && b.urgencyLevel !== 'CRITICAL') return false;
         if (appState.activeFilter === 'VEG' && b.dietaryType === 'NON_VEG') return false;
         if (appState.activeFilter === 'FEASIBLE' && !b.feasible) return false;
@@ -217,19 +220,30 @@ function renderBatchesGrid() {
     }
 
     grid.innerHTML = filtered.map(b => {
-        const isAvailable = b.status === 'AVAILABLE';
+        const isExpired = b.status === 'EXPIRED' || b.secondsUntilExpiry <= 0;
+        const isCompost = b.status === 'COMPOST_DIVERTED';
+        const isAvailable = b.status === 'AVAILABLE' && !isExpired;
         const rankLabel = isAvailable && b.queueRank > 0
             ? `<span class="rank-chip ${b.queueRank === 1 ? 'rank-1' : ''}">#${b.queueRank} IN PRIORITY QUEUE (Key: ${b.priorityHeapKey.toFixed(1)})</span>`
-            : `<span class="rank-chip">STATUS: ${b.status.replace('_', ' ')}</span>`;
+            : `<span class="rank-chip">STATUS: ${isExpired && !isCompost ? 'EXPIRED (BIOGAS ELIGIBLE)' : b.status.replace('_', ' ')}</span>`;
 
         const dietIcon = b.dietaryType === 'VEG' ? '🟢 VEG' : (b.dietaryType === 'VEGAN' ? '🌿 VEGAN' : '🔴 NON-VEG');
-        const feasibleBadge = b.feasible
-            ? `<span class="feasible-tag">✓ Feasible (${b.etaMinutes}m ETA &lt; ${b.minutesUntilExpiry}m)</span>`
-            : `<span class="unfeasible-tag">⚠ Tight Window (${b.etaMinutes}m ETA)</span>`;
+        const feasibleBadge = isExpired
+            ? `<span class="unfeasible-tag">♻️ Eligible for SDG 12 Biogas/Compost</span>`
+            : (b.feasible
+                ? `<span class="feasible-tag">✓ Feasible (${b.etaMinutes}m ETA &lt; ${b.minutesUntilExpiry}m)</span>`
+                : `<span class="unfeasible-tag">⚠ Tight Window (${b.etaMinutes}m ETA)</span>`);
 
-        const actionBtn = isAvailable
-            ? `<button class="btn btn-primary" onclick="openClaimModal('${b.id}')">Claim Batch &amp; Dispatch</button>`
-            : `<button class="btn btn-secondary" onclick="switchTab('tracker')">Track Pickup (${b.status.replace('_', ' ')}) &rarr;</button>`;
+        let actionBtn = '';
+        if (isCompost) {
+            actionBtn = `<span class="urgency-pill COMPLETED">♻️ Diverted to Biogas &amp; Compost (0% Landfill)</span>`;
+        } else if (isExpired) {
+            actionBtn = `<button class="btn btn-warning-outline" onclick="divertBatchToCompost('${b.id}')">♻️ Reroute to Biogas / Compost Plant (SDG 12)</button>`;
+        } else if (isAvailable) {
+            actionBtn = `<button class="btn btn-primary" onclick="openClaimModal('${b.id}')">Claim Batch &amp; Dispatch</button>`;
+        } else {
+            actionBtn = `<button class="btn btn-secondary" onclick="switchTab('tracker')">Track Pickup (${b.status.replace('_', ' ')}) &rarr;</button>`;
+        }
 
         const isSelected = appState.selectedBatchId === b.id;
         return `
@@ -620,12 +634,21 @@ function renderDonorBatchesView() {
     };
 
     container.innerHTML = appState.batches.map(b => {
-        const isAvailable = b.status === 'AVAILABLE';
+        const isExpired = b.status === 'EXPIRED' || (b.status === 'AVAILABLE' && b.secondsUntilExpiry <= 0);
+        const isCompost = b.status === 'COMPOST_DIVERTED';
+        const isAvailable = b.status === 'AVAILABLE' && !isExpired;
         const currentIdx = stages.indexOf(b.status);
 
-        const statusBadge = isAvailable
-            ? `<span class="urgency-pill ${b.urgencyLevel}">⏳ Waiting for NGO Claim • PriorityQueue Rank #${b.queueRank || '-'} (${formatRemainingTime(b.secondsUntilExpiry)})</span>`
-            : `<span class="urgency-pill COMPLETED">🤝 Claimed by ${escapeHtml(b.claimedByNgo || 'Partner NGO')} (${b.status.replace('_', ' ')})</span>`;
+        let statusBadge = '';
+        if (isCompost) {
+            statusBadge = `<span class="urgency-pill COMPLETED">♻️ Diverted to Biogas &amp; Compost Plant (0% Landfill Waste)</span>`;
+        } else if (isExpired) {
+            statusBadge = `<button class="btn btn-warning-outline" onclick="divertBatchToCompost('${b.id}')">♻️ Reroute Expired Batch to Biogas / Compost Plant (SDG 12)</button>`;
+        } else if (isAvailable) {
+            statusBadge = `<span class="urgency-pill ${b.urgencyLevel}">⏳ Waiting for NGO Claim • PriorityQueue Rank #${b.queueRank || '-'} (${formatRemainingTime(b.secondsUntilExpiry)})</span>`;
+        } else {
+            statusBadge = `<span class="urgency-pill COMPLETED">🤝 Claimed by ${escapeHtml(b.claimedByNgo || 'Partner NGO')} (${b.status.replace('_', ' ')})</span>`;
+        }
 
         const stepsHtml = stages.map((st, idx) => {
             let cls = 'step-item';
@@ -1213,4 +1236,126 @@ function announceTopUrgentBatch() {
     speakVoiceAlert(speech);
     showToast('CRITICAL', `🔊 Announcing #1 Batch (${head.id})`, speech);
     voiceAlertsEnabled = prev;
+}
+
+// ==================== OPTION 4: ZERO-LANDFILL BIOGAS & COMPOST FALLBACK ====================
+async function divertBatchToCompost(batchId) {
+    try {
+        const res = await fetch('/api/batches/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ batchId, status: 'COMPOST_DIVERTED' })
+        });
+        if (!res.ok) throw new Error('Failed to divert batch');
+        await fetchBackendState(false);
+        showToast('SUCCESS', '♻️ Zero-Landfill Biogas Diversion Complete',
+            `Batch ${batchId} routed to TerraGreen Biogas & Organic Compost Plant (SDG 12 Circular Economy).`);
+    } catch (err) {
+        alert('Could not divert batch: ' + err.message);
+    }
+}
+
+// ==================== OPTION 6: MULTILINGUAL SWITCHER (ENGLISH / KANNADA / HINDI) ====================
+const I18N_DICT = {
+    en: {
+        welcomeTitle: 'Welcome to RescueBite',
+        welcomeSubtitle: 'Surplus Food Rescue & Priority Redistribution Platform (SDG 2 & SDG 12)',
+        sdg2: 'Zero Hunger',
+        sdg12: 'Responsible Consumption & Production',
+        donorLoginTitle: '🍽️ Food Donor Login',
+        donorLoginDesc: 'For Restaurants, University Hostels, Wedding & Event Halls to post surplus food batches.',
+        donorLoginBtn: 'Login as Food Donor →',
+        ngoLoginTitle: '🏢 NGO / Volunteer Hub Login',
+        ngoLoginDesc: 'For Shelters, NGOs & Volunteers to monitor the PriorityQueue, claim batches & track pickups.',
+        ngoLoginBtn: 'Login as NGO / Volunteer Hub →',
+        activeNgoLabel: 'Active NGO / Volunteer Hub:',
+        tabRadar: 'Live Rescue Radar & Queue',
+        tabTracker: 'NGO Pickup Tracker',
+        tabArch: 'Java PriorityQueue & SQL',
+        tabPostFood: 'Post Surplus Food',
+        tabMyBatches: 'My Posted Batches & Pickup Status',
+        kpiHead: '#1 Urgent Head Batch',
+        kpiActive: 'Active Queue Batches',
+        kpiAvailable: 'Available Surplus Meals',
+        kpiRescued: 'Meals Rescued (SDG 2)',
+        kpiSaved: 'Food Saved & CO₂ Prevented (SDG 12)',
+        filterAll: 'All Active & In-Transit',
+        filterCritical: '🔥 Critical (<60m)',
+        filterVeg: '🌱 Pure Veg / Vegan',
+        filterFeasible: '✅ Reachable Before Expiry',
+        filterBiogas: '♻️ Expired / Biogas Fallback'
+    },
+    kn: {
+        welcomeTitle: 'ರೆಸ್ಕ್ಯೂಬೈಟ್ (RescueBite) ಗೆ ಸ್ವಾಗತ',
+        welcomeSubtitle: 'ಹೆಚ್ಚುವರಿ ಆಹಾರ ರಕ್ಷಣೆ ಮತ್ತು ಮರುಹಂಚಿಕೆ ವೇದಿಕೆ (SDG 2 & SDG 12)',
+        sdg2: 'ಶೂನ್ಯ ಹಸಿವು (Zero Hunger)',
+        sdg12: 'ಜವಾಬ್ದಾರಿಯುತ ಬಳಕೆ ಮತ್ತು ಉತ್ಪಾದನೆ',
+        donorLoginTitle: '🍽️ ಆಹಾರ ದಾನಿಗಳ ಲಾಗಿನ್ (Food Donor)',
+        donorLoginDesc: 'ರೆಸ್ಟೋರೆಂಟ್, ಹಾಸ್ಟೆಲ್ ಮತ್ತು ಕಲ್ಯಾಣ ಮಂಟಪಗಳಿಂದ ಹೆಚ್ಚುವರಿ ಆಹಾರವನ್ನು ಹಂಚಿಕೊಳ್ಳಲು.',
+        donorLoginBtn: 'ಆಹಾರ ದಾನಿಯಾಗಿ ಲಾಗಿನ್ ಮಾಡಿ →',
+        ngoLoginTitle: '🏢 ಎನ್‌ಜಿಒ / ಸ್ವಯಂಸೇವಕರ ಲಾಗಿನ್ (NGO Hub)',
+        ngoLoginDesc: 'ಆಹಾರವನ್ನು ಕ್ಲೈಮ್ ಮಾಡಲು ಮತ್ತು ಪಿಕಪ್ ಸ್ಥಿತಿಯನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲು.',
+        ngoLoginBtn: 'ಎನ್‌ಜಿಒ / ಸ್ವಯಂಸೇವಕರಾಗಿ ಲಾಗಿನ್ ಮಾಡಿ →',
+        activeNgoLabel: 'ಸಕ್ರಿಯ ಎನ್‌ಜಿಒ / ಸ್ವಯಂಸೇವಕ ಕೇಂದ್ರ:',
+        tabRadar: 'ಲೈವ್ ರೆಸ್ಕ್ಯೂ ರಾಡಾರ್ ಮತ್ತು ಕ್ಯೂ',
+        tabTracker: 'ಎನ್‌ಜಿಒ ಪಿಕಪ್ ಟ್ರ್ಯಾಕರ್',
+        tabArch: 'ಜಾವಾ PriorityQueue ಮತ್ತು SQL',
+        tabPostFood: 'ಹೆಚ್ಚುವರಿ ಆಹಾರ ಸೇರಿಸಿ',
+        tabMyBatches: 'ನನ್ನ ಆಹಾರ ಬ್ಯಾಚ್‌ಗಳು ಮತ್ತು ಸ್ಥಿತಿ',
+        kpiHead: '#1 ಅತಿ ತುರ್ತು ಆಹಾರ ಬ್ಯಾಚ್',
+        kpiActive: 'ಸಕ್ರಿಯ ಆಹಾರ ಬ್ಯಾಚ್‌ಗಳು',
+        kpiAvailable: 'ಲಭ್ಯವಿರುವ ಊಟಗಳು',
+        kpiRescued: 'ರಕ್ಷಿಸಿದ ಊಟಗಳು (SDG 2)',
+        kpiSaved: 'ಉಳಿಸಿದ ಆಹಾರ ಮತ್ತು CO₂ ತಡೆ (SDG 12)',
+        filterAll: 'ಎಲ್ಲಾ ಸಕ್ರಿಯ ಬ್ಯಾಚ್‌ಗಳು',
+        filterCritical: '🔥 ತುರ್ತು (<60 ನಿಮಿಷ)',
+        filterVeg: '🌱 ಸಸ್ಯಹಾರಿ (Veg / Vegan)',
+        filterFeasible: '✅ ಸಮಯಕ್ಕೆ ತಲುಪಬಹುದಾದ',
+        filterBiogas: '♻️ ಅವಧಿ ಮೀರಿದ / ಬಯೋಗ್ಯಾಸ್ & ಗೊಬ್ಬರ'
+    },
+    hi: {
+        welcomeTitle: 'रेस्क्यूबाइट (RescueBite) में आपका स्वागत है',
+        welcomeSubtitle: 'अधिशेष भोजन बचाव और प्राथमिकता पुनर्वितरण मंच (SDG 2 & SDG 12)',
+        sdg2: 'भुखमरी समाप्त करना (Zero Hunger)',
+        sdg12: 'जिम्मेदार उपभोग और उत्पादन',
+        donorLoginTitle: '🍽️ खाद्य दाता लॉगिन (Food Donor)',
+        donorLoginDesc: 'रेस्तरां, हॉस्टल और मैरिज हॉल से बचा हुआ भोजन पोस्ट करने के लिए।',
+        donorLoginBtn: 'खाद्य दाता के रूप में लॉगिन करें →',
+        ngoLoginTitle: '🏢 एनजीओ / स्वयंसेवक हब लॉगिन',
+        ngoLoginDesc: 'PriorityQueue देखने, भोजन क्लेम करने और पिकअप ट्रैक करने के लिए।',
+        ngoLoginBtn: 'एनजीओ / स्वयंसेवक हब लॉगिन करें →',
+        activeNgoLabel: 'सक्रिय एनजीओ / स्वयंसेवक केंद्र:',
+        tabRadar: 'लाइव रेस्क्यू रडार और क्यू',
+        tabTracker: 'एनजीओ पिकअप ट्रैकर',
+        tabArch: 'जावा PriorityQueue और SQL',
+        tabPostFood: 'अधिशेष भोजन पोस्ट करें',
+        tabMyBatches: 'मेरे पोस्ट किए गए बैच और स्थिति',
+        kpiHead: '#1 सबसे जरूरी बैच',
+        kpiActive: 'सक्रिय कतार बैच',
+        kpiAvailable: 'उपलब्ध भोजन (सर्विंग्स)',
+        kpiRescued: 'बचाया गया भोजन (SDG 2)',
+        kpiSaved: 'बचाया गया भोजन और CO₂ बचत (SDG 12)',
+        filterAll: 'सभी सक्रिय बैच',
+        filterCritical: '🔥 अत्यंत जरूरी (<60m)',
+        filterVeg: '🌱 शुद्ध शाकाहारी (Veg)',
+        filterFeasible: '✅ समय से पहले पहुंचने योग्य',
+        filterBiogas: '♻️ एक्सपायर्ड / बायोगैस और खाद'
+    }
+};
+
+function setAppLanguage(lang) {
+    const dict = I18N_DICT[lang] || I18N_DICT.en;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) {
+            el.textContent = dict[key];
+        }
+    });
+    const s1 = document.getElementById('authLangSelect');
+    const s2 = document.getElementById('topLangSelect');
+    if (s1 && s1.value !== lang) s1.value = lang;
+    if (s2 && s2.value !== lang) s2.value = lang;
+
+    const langNames = { en: 'English', kn: 'ಕನ್ನಡ (Kannada)', hi: 'हिन्दी (Hindi)' };
+    showToast('INFO', '🌐 Language Switched', `Active UI Language: ${langNames[lang] || lang}`);
 }

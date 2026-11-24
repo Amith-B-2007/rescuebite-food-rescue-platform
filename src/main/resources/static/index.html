@@ -10,13 +10,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet Interactive Map CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="/css/styles.css?v=7" />
+    <link rel="stylesheet" href="/css/styles.css?v=9" />
 </head>
 <body>
     <!-- ==================== DUAL ROLE LOGIN SCREEN (FIRST SCREEN) ==================== -->
     <div id="authPortalOverlay" class="auth-overlay">
         <div class="auth-container">
             <div class="auth-header">
+                <div style="display:flex; justify-content:flex-end; margin-bottom: 6px;">
+                    <select id="authLangSelect" class="ngo-select" onchange="setAppLanguage(this.value)" title="Select Language / ಭಾಷೆ / भाषा">
+                        <option value="en">🌐 English</option>
+                        <option value="kn">🌐 ಕನ್ನಡ (Kannada)</option>
+                        <option value="hi">🌐 हिन्दी (Hindi)</option>
+                    </select>
+                </div>
                 <div class="brand-icon auth-brand-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
@@ -24,11 +31,11 @@
                         <path d="m15 5 6 6"/>
                     </svg>
                 </div>
-                <h1>Welcome to Rescue<span>Bite</span></h1>
-                <p>Surplus Food Rescue &amp; Priority Redistribution Platform (SDG 2 &amp; SDG 12)</p>
+                <h1 data-i18n="welcomeTitle">Welcome to RescueBite</h1>
+                <p data-i18n="welcomeSubtitle">Surplus Food Rescue &amp; Priority Redistribution Platform (SDG 2 &amp; SDG 12)</p>
                 <div class="sdg-pills" style="justify-content:center; margin-top:10px;">
-                    <span class="sdg-badge sdg-2"><span class="sdg-num">SDG 2</span> Zero Hunger</span>
-                    <span class="sdg-badge sdg-12"><span class="sdg-num">SDG 12</span> Responsible Consumption</span>
+                    <span class="sdg-badge sdg-2"><span class="sdg-num">SDG 2</span> <span data-i18n="sdg2">Zero Hunger</span></span>
+                    <span class="sdg-badge sdg-12"><span class="sdg-num">SDG 12</span> <span data-i18n="sdg12">Responsible Consumption</span></span>
                 </div>
             </div>
 
@@ -36,8 +43,8 @@
                 <!-- 1. FOOD DONOR LOGIN CARD -->
                 <div class="auth-role-card donor-auth-card">
                     <div class="auth-card-badge">PORTAL 1 • FOOD DONOR</div>
-                    <h2>🍽️ Food Donor Login</h2>
-                    <p class="auth-role-desc">For Restaurants, University Hostels, Wedding &amp; Event Halls to post surplus food batches.</p>
+                    <h2 data-i18n="donorLoginTitle">🍽️ Food Donor Login</h2>
+                    <p class="auth-role-desc" data-i18n="donorLoginDesc">For Restaurants, University Hostels, Wedding &amp; Event Halls to post surplus food batches.</p>
 
                     <form onsubmit="handleRoleLogin(event, 'DONOR')" class="auth-form">
                         <div class="form-group">
@@ -56,7 +63,7 @@
                             <span>Demo ID: <code>donor@rescuebite.org</code></span>
                             <span>Pass: <code>donor123</code></span>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:6px;">
+                        <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:6px;" data-i18n="donorLoginBtn">
                             Login as Food Donor &rarr;
                         </button>
                     </form>
@@ -65,8 +72,8 @@
                 <!-- 2. NGO / VOLUNTEER HUB LOGIN CARD -->
                 <div class="auth-role-card ngo-auth-card">
                     <div class="auth-card-badge ngo-badge">PORTAL 2 • NGO / VOLUNTEER HUB</div>
-                    <h2>🏢 NGO / Volunteer Hub Login</h2>
-                    <p class="auth-role-desc">For Shelters, NGOs &amp; Volunteers to monitor the PriorityQueue, claim batches &amp; track pickups.</p>
+                    <h2 data-i18n="ngoLoginTitle">🏢 NGO / Volunteer Hub Login</h2>
+                    <p class="auth-role-desc" data-i18n="ngoLoginDesc">For Shelters, NGOs &amp; Volunteers to monitor the PriorityQueue, claim batches &amp; track pickups.</p>
 
                     <form onsubmit="handleRoleLogin(event, 'NGO')" class="auth-form">
                         <div class="form-group">
@@ -91,7 +98,7 @@
                             <span>Demo ID: <code>ngo@rescuebite.org</code></span>
                             <span>Pass: <code>ngo123</code></span>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:6px; background: linear-gradient(135deg, #2563eb, #1d4ed8);">
+                        <button type="submit" class="btn btn-primary btn-lg" style="width:100%; margin-top:6px; background: linear-gradient(135deg, #2563eb, #1d4ed8);" data-i18n="ngoLoginBtn">
                             Login as NGO / Volunteer Hub &rarr;
                         </button>
                     </form>
@@ -105,10 +112,10 @@
         <div class="container top-banner-inner">
             <div class="sdg-pills">
                 <span class="sdg-badge sdg-2">
-                    <span class="sdg-num">SDG 2</span> Zero Hunger
+                    <span class="sdg-num">SDG 2</span> <span data-i18n="sdg2">Zero Hunger</span>
                 </span>
                 <span class="sdg-badge sdg-12">
-                    <span class="sdg-num">SDG 12</span> Responsible Consumption &amp; Production
+                    <span class="sdg-num">SDG 12</span> <span data-i18n="sdg12">Responsible Consumption &amp; Production</span>
                 </span>
                 <span class="engine-badge" id="backendStatusBadge">
                     <span class="pulse-dot"></span>
@@ -119,7 +126,12 @@
                 </span>
             </div>
             <div class="ngo-selector-wrap">
-                <label for="ngoHubSelect" class="ngo-label role-ngo-only">Active NGO / Volunteer Hub:</label>
+                <select id="topLangSelect" class="ngo-select" onchange="setAppLanguage(this.value)" title="Select Language / ಭಾಷೆ / भाषा">
+                    <option value="en">🌐 English</option>
+                    <option value="kn">🌐 ಕನ್ನಡ (Kannada)</option>
+                    <option value="hi">🌐 हिन्दी (Hindi)</option>
+                </select>
+                <label for="ngoHubSelect" class="ngo-label role-ngo-only" data-i18n="activeNgoLabel">Active NGO / Volunteer Hub:</label>
                 <select id="ngoHubSelect" class="ngo-select role-ngo-only">
                     <option value="12.9615,77.6100,Robin Hood Army — Central Hub (MG Road)">Robin Hood Army — Central Hub (MG Road)</option>
                     <option value="12.9290,77.5825,Akshaya Trust Shelter — South Hub (Jayanagar)">Akshaya Trust Shelter — South Hub (Jayanagar)</option>
@@ -156,25 +168,25 @@
                 <!-- NGO-ONLY TABS -->
                 <button class="nav-tab role-ngo-only active" data-tab="dashboard" onclick="switchTab('dashboard')">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-                    Live Rescue Radar &amp; Queue
+                    <span data-i18n="tabRadar">Live Rescue Radar &amp; Queue</span>
                 </button>
                 <button class="nav-tab role-ngo-only" data-tab="tracker" onclick="switchTab('tracker')">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                    NGO Pickup Tracker <span class="tab-counter" id="trackerCountBadge">0</span>
+                    <span data-i18n="tabTracker">NGO Pickup Tracker</span> <span class="tab-counter" id="trackerCountBadge">0</span>
                 </button>
                 <button class="nav-tab role-ngo-only" data-tab="architecture" onclick="switchTab('architecture')">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                    Java PriorityQueue &amp; SQL
+                    <span data-i18n="tabArch">Java PriorityQueue &amp; SQL</span>
                 </button>
 
                 <!-- DONOR-ONLY TABS -->
                 <button class="nav-tab role-donor-only hidden" data-tab="donor" onclick="switchTab('donor')">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                    Post Surplus Food
+                    <span data-i18n="tabPostFood">Post Surplus Food</span>
                 </button>
                 <button class="nav-tab role-donor-only hidden" data-tab="donor-batches" onclick="switchTab('donor-batches')">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                    My Posted Batches &amp; Pickup Status <span class="tab-counter" id="donorBatchesCountBadge">0</span>
+                    <span data-i18n="tabMyBatches">My Posted Batches &amp; Pickup Status</span> <span class="tab-counter" id="donorBatchesCountBadge">0</span>
                 </button>
             </nav>
 
@@ -206,7 +218,7 @@
         <div class="container kpi-grid">
             <div class="kpi-card kpi-head-card">
                 <div class="kpi-label">
-                    <span class="mono-tag">queue.peek()</span> #1 Urgent Head Batch
+                    <span class="mono-tag">queue.peek()</span> <span data-i18n="kpiHead">#1 Urgent Head Batch</span>
                 </div>
                 <div class="kpi-value-row">
                     <span class="kpi-value" id="kpiHeadId">FB-101</span>
@@ -216,7 +228,7 @@
             </div>
 
             <div class="kpi-card">
-                <div class="kpi-label">Active Queue Batches</div>
+                <div class="kpi-label" data-i18n="kpiActive">Active Queue Batches</div>
                 <div class="kpi-value-row">
                     <span class="kpi-value" id="kpiActiveCount">6</span>
                     <span class="kpi-badge-danger" id="kpiCriticalCount">2 Critical (&lt;60m)</span>
@@ -225,7 +237,7 @@
             </div>
 
             <div class="kpi-card">
-                <div class="kpi-label">Available Surplus Meals</div>
+                <div class="kpi-label" data-i18n="kpiAvailable">Available Surplus Meals</div>
                 <div class="kpi-value-row">
                     <span class="kpi-value" id="kpiAvailableServings">550</span>
                     <span class="kpi-unit">servings</span>
@@ -234,7 +246,7 @@
             </div>
 
             <div class="kpi-card">
-                <div class="kpi-label">Meals Rescued (SDG 2)</div>
+                <div class="kpi-label" data-i18n="kpiRescued">Meals Rescued (SDG 2)</div>
                 <div class="kpi-value-row">
                     <span class="kpi-value text-emerald" id="kpiMealsRescued">1,370</span>
                     <span class="kpi-unit">meals</span>
@@ -243,7 +255,7 @@
             </div>
 
             <div class="kpi-card">
-                <div class="kpi-label">Food Saved &amp; CO₂ Prevented (SDG 12)</div>
+                <div class="kpi-label" data-i18n="kpiSaved">Food Saved &amp; CO₂ Prevented (SDG 12)</div>
                 <div class="kpi-value-row">
                     <span class="kpi-value text-teal" id="kpiWeightSaved">466.5 kg</span>
                     <span class="kpi-badge-eco" id="kpiCo2Saved">-1,166 kg CO₂e</span>
@@ -336,10 +348,11 @@
                     </div>
                     <div class="filter-bar">
                         <div class="filter-pills">
-                            <button class="filter-btn active" data-filter="ALL" onclick="setBatchFilter('ALL', this)">All Active &amp; In-Transit</button>
-                            <button class="filter-btn" data-filter="CRITICAL" onclick="setBatchFilter('CRITICAL', this)">🔥 Critical (&lt;60m)</button>
-                            <button class="filter-btn" data-filter="VEG" onclick="setBatchFilter('VEG', this)">🌱 Pure Veg / Vegan</button>
-                            <button class="filter-btn" data-filter="FEASIBLE" onclick="setBatchFilter('FEASIBLE', this)">✅ Reachable Before Expiry</button>
+                            <button class="filter-btn active" data-filter="ALL" onclick="setBatchFilter('ALL', this)" data-i18n="filterAll">All Active &amp; In-Transit</button>
+                            <button class="filter-btn" data-filter="CRITICAL" onclick="setBatchFilter('CRITICAL', this)" data-i18n="filterCritical">🔥 Critical (&lt;60m)</button>
+                            <button class="filter-btn" data-filter="VEG" onclick="setBatchFilter('VEG', this)" data-i18n="filterVeg">🌱 Pure Veg / Vegan</button>
+                            <button class="filter-btn" data-filter="FEASIBLE" onclick="setBatchFilter('FEASIBLE', this)" data-i18n="filterFeasible">✅ Reachable Before Expiry</button>
+                            <button class="filter-btn" data-filter="BIOGAS" onclick="setBatchFilter('BIOGAS', this)" data-i18n="filterBiogas">♻️ Expired / Biogas Fallback</button>
                         </div>
                         <input type="search" id="batchSearchInput" class="search-input" placeholder="Search donor, dish, or area..." oninput="renderAll()" />
                     </div>
@@ -678,6 +691,6 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="/js/app.js?v=8"></script>
+    <script src="/js/app.js?v=9"></script>
 </body>
 </html>
