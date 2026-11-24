@@ -80,11 +80,15 @@ async function fetchBackendState(isInitial) {
             syncPersistedNgoHubs(data.ngoHubs);
         }
 
-        // Check for new alerts to toast
+        // Check for new alerts to toast and voice-announce
         if (!isInitial) {
             for (const a of appState.alerts) {
                 if (!appState.knownAlertIds.has(a.id)) {
                     showToast(a.severity, a.title, a.message);
+                    if (a.severity === 'CRITICAL' || a.severity === 'URGENT' || a.severity === 'SUCCESS') {
+                        playAlertChime(a.severity);
+                        speakVoiceAlert(`${a.title}. ${a.message}`);
+                    }
                 }
             }
         }
@@ -1149,4 +1153,64 @@ function escapeHtml(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+}
+
+// ==================== FEATURE 5: LIVE VOICE & AUDIO ALERT SYSTEM ====================
+let voiceAlertsEnabled = true;
+
+function toggleVoiceAlerts() {
+    voiceAlertsEnabled = !voiceAlertsEnabled;
+    const btn = document.getElementById('voiceToggleBtn');
+    if (btn) {
+        btn.textContent = voiceAlertsEnabled ? '🔊 Voice Alerts: ON' : '🔇 Voice Alerts: MUTE';
+    }
+    if (!voiceAlertsEnabled && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+    showToast('INFO', voiceAlertsEnabled ? 'Voice Alerts Enabled' : 'Voice Alerts Muted',
+        voiceAlertsEnabled ? 'Critical food drops will play an audio chime & voice alert.' : 'Voice announcements muted.');
+}
+
+function playAlertChime(severity) {
+    if (!voiceAlertsEnabled) return;
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(severity === 'CRITICAL' ? 880 : 660, ctx.currentTime);
+        osc.frequency.setValueAtTime(severity === 'CRITICAL' ? 1174 : 880, ctx.currentTime + 0.14);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.42);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.43);
+    } catch (_) {}
+}
+
+function speakVoiceAlert(text) {
+    if (!voiceAlertsEnabled || !('speechSynthesis' in window)) return;
+    try {
+        window.speechSynthesis.cancel();
+        const cleanText = text.replace(/[#*_`]/g, '');
+        const utter = new SpeechSynthesisUtterance(cleanText);
+        utter.rate = 1.04;
+        utter.pitch = 1.0;
+        window.speechSynthesis.speak(utter);
+    } catch (_) {}
+}
+
+function announceTopUrgentBatch() {
+    const head = appState.batches.find(b => b.id === appState.headBatchId) || appState.batches[0];
+    if (!head) return;
+    const prev = voiceAlertsEnabled;
+    voiceAlertsEnabled = true;
+    playAlertChime('CRITICAL');
+    const speech = `Priority Queue Head Alert! Batch ${head.id} from ${head.donorName}: ${head.servings} servings of ${head.foodTitle}, expiring in ${head.minutesUntilExpiry} minutes. Best matched NGO is ${head.recommendedNgoName || appState.ngoHub.name}, ${head.distanceKm} kilometers away.`;
+    speakVoiceAlert(speech);
+    showToast('CRITICAL', `🔊 Announcing #1 Batch (${head.id})`, speech);
+    voiceAlertsEnabled = prev;
 }

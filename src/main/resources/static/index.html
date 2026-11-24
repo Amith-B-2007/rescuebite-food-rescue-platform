@@ -179,6 +179,12 @@
             </nav>
 
             <div class="nav-actions">
+                <button class="btn btn-secondary" id="voiceToggleBtn" onclick="toggleVoiceAlerts()" title="Toggle Live Voice & Audio Chime for Critical Food Alerts">
+                    🔊 Voice Alerts: ON
+                </button>
+                <a class="btn btn-secondary" href="/api/export/csv" download="RescueBite_SDG_Impact_Report.csv" title="Download Excel-compatible CSV report of all batches & SDG metrics">
+                    📥 Export CSV
+                </a>
                 <button class="btn btn-warning-outline role-donor-only hidden" onclick="triggerSimulatedBatch()" title="Simulate an urgent food batch from a hotel/hostel for live demo">
                     ⚡ Quick Demo Food Drop
                 </button>
@@ -309,7 +315,10 @@
                                 </h2>
                                 <p class="panel-subtitle">Instant notifications for urgent surplus drops &amp; pickup dispatches</p>
                             </div>
-                            <span class="badge-count" id="alertTotalBadge">0</span>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <button type="button" class="btn-chip" onclick="announceTopUrgentBatch()">🔊 Announce #1</button>
+                                <span class="badge-count" id="alertTotalBadge">0</span>
+                            </div>
                         </div>
                         <div class="alerts-list" id="alertsFeed">
                             <!-- Populated by JS -->
@@ -669,6 +678,6 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="/js/app.js?v=7"></script>
+    <script src="/js/app.js?v=8"></script>
 </body>
 </html>
