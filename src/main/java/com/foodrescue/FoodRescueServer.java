@@ -50,6 +50,7 @@ public class FoodRescueServer {
         server.createContext("/api/batches/status", FoodRescueServer::handleUpdateStatus);
         server.createContext("/api/simulate", FoodRescueServer::handleSimulateUrgentBatch);
         server.createContext("/api/ngos", FoodRescueServer::handleAddNgoHub);
+        server.createContext("/api/export/csv", FoodRescueServer::handleExportCsv);
 
         // Static Web Assets
         server.createContext("/", FoodRescueServer::handleStaticFiles);
@@ -270,6 +271,54 @@ public class FoodRescueServer {
 
         queueService.addNgoHub(name, lat, lon, volunteer, phone);
         sendJson(exchange, 201, "{\"status\":\"created\",\"name\":" + quote(name) + "}");
+    }
+
+    private static void handleExportCsv(HttpExchange exchange) throws IOException {
+        addCorsHeaders(exchange);
+        List<FoodBatch> orderedBatches = queueService.getBatchesInPriorityOrder();
+        StringBuilder csv = new StringBuilder();
+        csv.append("Batch ID,PriorityQueue Rank,Urgency Level,Donor Organization,Donor Type,Food Description,Category,Dietary Type,Servings,Weight (kg),CO2 Prevented (kg),Remaining Expiry (mins),Pickup Address,Smart Auto-Match NGO,Status,Claimed By NGO,Volunteer Name,Volunteer Phone,Handover OTP,FSSAI Hygiene Verified\n");
+
+        int rank = 1;
+        for (FoodBatch b : orderedBatches) {
+            int assignedRank = ("AVAILABLE".equals(b.getStatus()) && b.getMinutesUntilExpiry() > 0) ? (rank++) : 0;
+            String[] bestMatch = queueService.findBestMatchedNgo(b);
+            double co2Kg = Math.round(b.getWeightKg() * 2.5 * 10.0) / 10.0;
+
+            csv.append(escapeCsv(b.getId())).append(",")
+               .append(assignedRank > 0 ? "#" + assignedRank : "-").append(",")
+               .append(escapeCsv(b.getUrgencyLevel())).append(",")
+               .append(escapeCsv(b.getDonorName())).append(",")
+               .append(escapeCsv(b.getDonorType())).append(",")
+               .append(escapeCsv(b.getFoodTitle())).append(",")
+               .append(escapeCsv(b.getCategory())).append(",")
+               .append(escapeCsv(b.getDietaryType())).append(",")
+               .append(b.getServings()).append(",")
+               .append(String.format(Locale.US, "%.1f", b.getWeightKg())).append(",")
+               .append(String.format(Locale.US, "%.1f", co2Kg)).append(",")
+               .append(b.getMinutesUntilExpiry()).append(",")
+               .append(escapeCsv(b.getPickupAddress())).append(",")
+               .append(escapeCsv(bestMatch[0] + " (" + bestMatch[1] + " km)")).append(",")
+               .append(escapeCsv(b.getStatus())).append(",")
+               .append(escapeCsv(b.getClaimedByNgo() != null ? b.getClaimedByNgo() : "-")).append(",")
+               .append(escapeCsv(b.getVolunteerName() != null ? b.getVolunteerName() : "-")).append(",")
+               .append(escapeCsv(b.getVolunteerPhone() != null ? b.getVolunteerPhone() : "-")).append(",")
+               .append(escapeCsv(b.getPickupOtp())).append(",")
+               .append(b.isHygieneVerified() ? "YES" : "NO").append("\n");
+        }
+
+        byte[] bytes = csv.toString().getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "text/csv; charset=utf-8");
+        exchange.getResponseHeaders().set("Content-Disposition", "attachment; filename=\"RescueBite_SDG_Impact_Report.csv\"");
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
+    }
+
+    private static String escapeCsv(String val) {
+        if (val == null) return "\"\"";
+        return "\"" + val.replace("\"", "\"\"") + "\"";
     }
 
     private static void handleSimulateUrgentBatch(HttpExchange exchange) throws IOException {
