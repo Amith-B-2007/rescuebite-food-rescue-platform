@@ -107,6 +107,8 @@ public class FoodRescueServer {
             if ("DELIVERED".equals(b.getStatus()) || "PICKED_UP".equals(b.getStatus())) {
                 totalMealsRescued += b.getServings();
                 totalWeightRescuedKg += b.getWeightKg();
+            } else if ("COMPOST_DIVERTED".equals(b.getStatus())) {
+                totalWeightRescuedKg += b.getWeightKg();
             }
 
             int assignedRank = ("AVAILABLE".equals(b.getStatus()) && minsLeft > 0) ? (priorityRank++) : 0;

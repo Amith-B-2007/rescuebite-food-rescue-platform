@@ -110,7 +110,7 @@ public class FoodBatch implements Comparable<FoodBatch> {
      * Urgency tier classification based on remaining window.
      */
     public String getUrgencyLevel() {
-        if ("DELIVERED".equals(status)) {
+        if ("DELIVERED".equals(status) || "COMPOST_DIVERTED".equals(status)) {
             return "COMPLETED";
         }
         long mins = getMinutesUntilExpiry();

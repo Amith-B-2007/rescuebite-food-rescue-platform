@@ -226,6 +226,26 @@ public class ExpiryPriorityQueueService {
         b8.setPickedUpAt(now.minus(165, ChronoUnit.MINUTES));
         b8.setDeliveredAt(now.minus(140, ChronoUnit.MINUTES));
 
+        // 9. Sample EXPIRED batch ready for Zero-Landfill Biogas / Compost Fallback (SDG 12 Circular Economy)
+        FoodBatch b9 = new FoodBatch(
+                "FB-109",
+                "City Engineering Hostel Mess - Block A",
+                "HOSTEL",
+                "+91 98459 33211",
+                "Afternoon Mess Surplus: Steamed Rice, Dal Fry & Mixed Veg",
+                "COOKED_MEALS",
+                "VEG",
+                45,
+                18.0,
+                now.minus(300, ChronoUnit.MINUTES),
+                now.minus(15, ChronoUnit.MINUTES),
+                "KR Circle, University Campus Road",
+                12.9766,
+                77.5869,
+                "Past human consumption window — eligible for SDG 12 Biogas & Organic Compost diversion."
+        );
+        b9.setStatus("EXPIRED");
+
         registerSeedBatch(b1);
         registerSeedBatch(b2);
         registerSeedBatch(b3);
@@ -234,6 +254,7 @@ public class ExpiryPriorityQueueService {
         registerSeedBatch(b6);
         registerSeedBatch(b7);
         registerSeedBatch(b8);
+        registerSeedBatch(b9);
 
         // Seed initial real-time alerts
         pushAlert("FB-101", "CRITICAL",
@@ -416,6 +437,20 @@ public class ExpiryPriorityQueueService {
                     "Volunteer Dispatched (En Route)",
                     String.format("%s is on the way to %s for pickup.",
                             batch.getVolunteerName(), batch.getDonorName()));
+        } else if ("COMPOST_DIVERTED".equals(nextStatus)) {
+            batch.setDeliveredAt(now);
+            batch.setClaimedByNgo("TerraGreen Biogas & Organic Compost Plant (SDG 12)");
+            batch.setVolunteerName("GreenCycle Recovery Unit");
+            pushAlert(batchId, "SUCCESS",
+                    "♻️ Zero-Landfill Biogas & Compost Diversion (" + batch.getWeightKg() + " kg)",
+                    String.format("Expired batch %s from %s was diverted to TerraGreen Biogas & Compost Plant — 0%% landfill waste!",
+                            batchId, batch.getDonorName()));
+        } else if ("EXPIRED".equals(nextStatus)) {
+            batch.setExpiryTime(now.minus(5, ChronoUnit.MINUTES));
+            pushAlert(batchId, "URGENT",
+                    "Batch Expired — Eligible for Biogas/Compost Fallback",
+                    String.format("Batch %s (%s) passed safe consumption window. Ready for SDG 12 Biogas & Compost diversion.",
+                            batchId, batch.getDonorName()));
         }
 
         refreshPriorityQueue();
