@@ -37,7 +37,8 @@ public class ExpiryPriorityQueueService {
     private final Map<String, FoodBatch> batchById = new LinkedHashMap<>();
     private final LinkedList<AlertEvent> recentAlerts = new LinkedList<>();
     private final List<String[]> ngoHubs = new ArrayList<>(); // [name, lat, lon, volunteer, phone]
-    private final AtomicInteger idSequence = new AtomicInteger(108);
+    private final Map<String, List<String[]>> batchChats = new LinkedHashMap<>(); // batchId -> List<[role, sender, text, epochMs]>
+    private final AtomicInteger idSequence = new AtomicInteger(109);
     private final AtomicInteger alertSequence = new AtomicInteger(500);
 
     public ExpiryPriorityQueueService() {
@@ -269,6 +270,17 @@ public class ExpiryPriorityQueueService {
         pushAlert("FB-108", "SUCCESS",
                 "Batch Delivered — Zero Waste Achieved!",
                 "Priya Nair delivered 90 servings (31.5 kg) from National Girls Hostel to Akshaya Trust Shelter.");
+
+        // Seed initial Donor <-> Volunteer Chat Messages
+        seedChat("FB-107", "DONOR", "Sapphire Hotel & Banquet", "Food is hot-packed in 4 insulated thermoboxes at Kitchen Service Gate B.", now.minus(18, ChronoUnit.MINUTES));
+        seedChat("FB-107", "NGO", "Arjun Mehta (Robin Hood Army)", "On my way via Residency Road! Live GPS tracking active, arriving in ~8 mins.", now.minus(12, ChronoUnit.MINUTES));
+        seedChat("FB-107", "DONOR", "Sapphire Hotel & Banquet", "Great, security guard is informed. Keep 4-digit Handover OTP ready.", now.minus(8, ChronoUnit.MINUTES));
+        seedChat("FB-101", "DONOR", "Grand Royal Convention Hall", "140 servings Veg Biryani & Paneer ready at Main Banquet Dispatch Bay.", now.minus(15, ChronoUnit.MINUTES));
+    }
+
+    private void seedChat(String batchId, String role, String sender, String text, Instant ts) {
+        batchChats.computeIfAbsent(batchId, k -> new ArrayList<>())
+                .add(new String[]{role, sender, text, String.valueOf(ts.toEpochMilli())});
     }
 
     private void registerSeedBatch(FoodBatch batch) {
@@ -521,6 +533,27 @@ public class ExpiryPriorityQueueService {
 
     public synchronized List<String[]> getNgoHubs() {
         return new ArrayList<>(ngoHubs);
+    }
+
+    public synchronized void addChatMessage(String batchId, String senderRole, String senderName, String text) {
+        if (batchId == null || text == null || text.isBlank()) return;
+        batchChats.computeIfAbsent(batchId, k -> new ArrayList<>())
+                .add(new String[]{
+                        senderRole != null ? senderRole : "NGO",
+                        senderName != null ? senderName : "Coordinator",
+                        text.trim(),
+                        String.valueOf(Instant.now().toEpochMilli())
+                });
+        FoodBatch b = batchById.get(batchId);
+        String donor = b != null ? b.getDonorName() : batchId;
+        pushAlert(batchId, "INFO",
+                "💬 Live Chat (" + batchId + "): " + senderName,
+                text.trim() + " [" + donor + "]");
+    }
+
+    public synchronized List<String[]> getChatMessages(String batchId) {
+        List<String[]> list = batchChats.get(batchId);
+        return list != null ? new ArrayList<>(list) : new ArrayList<>();
     }
 
     public synchronized List<AlertEvent> getRecentAlerts() {

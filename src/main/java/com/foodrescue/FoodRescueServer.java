@@ -51,6 +51,7 @@ public class FoodRescueServer {
         server.createContext("/api/simulate", FoodRescueServer::handleSimulateUrgentBatch);
         server.createContext("/api/ngos", FoodRescueServer::handleAddNgoHub);
         server.createContext("/api/export/csv", FoodRescueServer::handleExportCsv);
+        server.createContext("/api/chat", FoodRescueServer::handleChatMessage);
 
         // Static Web Assets
         server.createContext("/", FoodRescueServer::handleStaticFiles);
@@ -394,8 +395,43 @@ public class FoodRescueServer {
         return "application/octet-stream";
     }
 
+    private static void handleChatMessage(HttpExchange exchange) throws IOException {
+        addCorsHeaders(exchange);
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+            exchange.sendResponseHeaders(204, -1);
+            return;
+        }
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            return;
+        }
+
+        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        Map<String, String> payload = parseFlatJson(body);
+
+        String batchId = payload.get("batchId");
+        String senderRole = payload.getOrDefault("senderRole", "NGO");
+        String senderName = payload.getOrDefault("senderName", "Volunteer Coordinator");
+        String message = payload.getOrDefault("message", "");
+
+        queueService.addChatMessage(batchId, senderRole, senderName, message);
+        sendJson(exchange, 201, "{\"status\":\"sent\"}");
+    }
+
     private static String toBatchJson(FoodBatch b, int queueRank, double distanceKm, int etaMinutes, boolean feasible) {
         String[] bestMatch = queueService.findBestMatchedNgo(b);
+        List<String[]> chats = queueService.getChatMessages(b.getId());
+        StringBuilder chatsJson = new StringBuilder("[");
+        for (int i = 0; i < chats.size(); i++) {
+            String[] c = chats.get(i);
+            if (i > 0) chatsJson.append(",");
+            chatsJson.append(String.format(Locale.US,
+                    "{\"role\":%s,\"sender\":%s,\"text\":%s,\"ts\":%s}",
+                    quote(c[0]), quote(c[1]), quote(c[2]), c[3]
+            ));
+        }
+        chatsJson.append("]");
+
         return String.format(Locale.US,
                 "{\"id\":%s,\"donorName\":%s,\"donorType\":%s,\"contactPhone\":%s,"
                         + "\"foodTitle\":%s,\"category\":%s,\"dietaryType\":%s,"
@@ -408,7 +444,8 @@ public class FoodRescueServer {
                         + "\"storageNotes\":%s,\"status\":%s,"
                         + "\"pickupOtp\":%s,\"hygieneVerified\":%b,"
                         + "\"recommendedNgoName\":%s,\"recommendedNgoDistKm\":%s,\"recommendedNgoEtaMins\":%s,"
-                        + "\"claimedByNgo\":%s,\"volunteerName\":%s,\"volunteerPhone\":%s}",
+                        + "\"claimedByNgo\":%s,\"volunteerName\":%s,\"volunteerPhone\":%s,"
+                        + "\"chatMessages\":%s}",
                 quote(b.getId()),
                 quote(b.getDonorName()),
                 quote(b.getDonorType()),
@@ -440,7 +477,8 @@ public class FoodRescueServer {
                 bestMatch[2],
                 quote(b.getClaimedByNgo()),
                 quote(b.getVolunteerName()),
-                quote(b.getVolunteerPhone())
+                quote(b.getVolunteerPhone()),
+                chatsJson
         );
     }
 
