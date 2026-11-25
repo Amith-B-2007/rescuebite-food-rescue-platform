@@ -29,7 +29,10 @@ let appState = {
 let mapInstance = null;
 let markersLayer = null;
 let routeLineLayer = null;
+let vehicleLayer = null;
 let markersByBatchId = {};
+let vehicleProgressByBatchId = {};
+let activeChatBatchId = null;
 let lastMapSignature = '';
 let hasInitialMapFit = false;
 
@@ -295,14 +298,49 @@ function renderBatchesGrid() {
                 </div>
 
                 <div class="batch-footer">
-                    <button type="button" class="btn btn-secondary" onclick="focusBatchOnMap('${b.id}')">
-                        🗺️ ${isSelected ? 'Route Active on Map ↑' : 'View Route on Map'}
-                    </button>
+                    <div style="display:flex; gap:6px;">
+                        <button type="button" class="btn btn-secondary" onclick="focusBatchOnMap('${b.id}')">
+                            🗺️ ${isSelected ? 'Route Active ↑' : 'View Route'}
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="openLiveChatModal('${b.id}')">
+                            💬 Chat (${(b.chatMessages || []).length})
+                        </button>
+                    </div>
                     ${actionBtn}
                 </div>
             </article>
         `;
     }).join('');
+}
+
+function buildLiveGpsTrackBarHtml(b) {
+    if (b.status !== 'EN_ROUTE' && b.status !== 'PICKED_UP') return '';
+    if (vehicleProgressByBatchId[b.id] == null) {
+        vehicleProgressByBatchId[b.id] = b.status === 'PICKED_UP' ? 0.68 : 0.36;
+    }
+    const prog = vehicleProgressByBatchId[b.id];
+    const pct = Math.round(prog * 100);
+    const remKm = Math.max(0.1, (b.distanceKm * (1 - prog))).toFixed(2);
+    const remMins = Math.max(1, Math.ceil(b.etaMinutes * (1 - prog)));
+    const destLabel = b.status === 'EN_ROUTE' ? `🍽️ ${escapeHtml(b.donorName)}` : `🏢 ${escapeHtml(b.claimedByNgo || 'NGO Shelter')}`;
+    const originLabel = b.status === 'EN_ROUTE' ? `🏢 ${escapeHtml(b.claimedByNgo || 'NGO Hub')}` : `🍽️ ${escapeHtml(b.donorName)}`;
+
+    return `
+        <div class="live-gps-track-bar" data-gps-card="${b.id}">
+            <div class="gps-track-header">
+                <span>🛵 <strong>LIVE GPS TRACKER:</strong> Volunteer ${escapeHtml(b.volunteerName || 'Arjun Mehta')}</span>
+                <span data-gps-text="${b.id}">${pct}% • ${remKm} km left (Arriving in ~${remMins} mins)</span>
+            </div>
+            <div class="gps-road-line">
+                <div class="gps-road-fill" data-gps-fill="${b.id}" style="width: ${pct}%;"></div>
+                <span class="gps-vehicle-icon" data-gps-icon="${b.id}" style="left: ${pct}%;">🛵</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-secondary); margin-top:4px;">
+                <span>${originLabel}</span>
+                <span>${destLabel}</span>
+            </div>
+        </div>
+    `;
 }
 
 function renderTrackerView() {
@@ -364,12 +402,14 @@ function renderTrackerView() {
                             (Volunteer: ${escapeHtml(b.volunteerName || 'Assigned')} • ${escapeHtml(b.volunteerPhone || '')})
                         </div>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <button type="button" class="btn btn-secondary" onclick="focusBatchOnMap('${b.id}')">🗺️ View Route on Map</button>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <button type="button" class="btn btn-secondary" onclick="openLiveChatModal('${b.id}')">💬 Live Chat (${(b.chatMessages || []).length})</button>
+                        <button type="button" class="btn btn-secondary" onclick="focusBatchOnMap('${b.id}')">🛵 Track on Map</button>
                         ${nextActionBtn}
                     </div>
                 </div>
                 <div class="stepper">${stepsHtml}</div>
+                ${buildLiveGpsTrackBarHtml(b)}
             </div>
         `;
     }).join('');
@@ -390,6 +430,7 @@ function initMap() {
 
     markersLayer = L.layerGroup().addTo(mapInstance);
     routeLineLayer = L.layerGroup().addTo(mapInstance);
+    vehicleLayer = L.layerGroup().addTo(mapInstance);
 }
 
 function renderMapMarkers(forceRebuild = false) {
@@ -672,9 +713,13 @@ function renderDonorBatchesView() {
                             ${!isAvailable ? `<br>🚗 <strong>Assigned NGO Volunteer:</strong> ${escapeHtml(b.volunteerName || 'Assigned')} (${escapeHtml(b.volunteerPhone || '')}) — Share OTP <strong>${escapeHtml(b.pickupOtp || '1234')}</strong> at handover` : ''}
                         </div>
                     </div>
-                    <div>${statusBadge}</div>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <button type="button" class="btn btn-secondary" onclick="openLiveChatModal('${b.id}')">💬 Live Chat (${(b.chatMessages || []).length})</button>
+                        ${statusBadge}
+                    </div>
                 </div>
                 <div class="stepper">${stepsHtml}</div>
+                ${buildLiveGpsTrackBarHtml(b)}
             </div>
         `;
     }).join('');
@@ -1111,11 +1156,34 @@ function setBatchFilter(filter, btnEl) {
 
 function tickLiveCountdowns() {
     appState.batches.forEach(b => {
-        if (b.secondsUntilExpiry > 0 && b.status !== 'DELIVERED') {
+        if (b.secondsUntilExpiry > 0 && b.status !== 'DELIVERED' && b.status !== 'COMPOST_DIVERTED') {
             b.secondsUntilExpiry -= 1;
             b.minutesUntilExpiry = Math.floor(b.secondsUntilExpiry / 60);
         }
+        if (b.status === 'EN_ROUTE' || b.status === 'PICKED_UP') {
+            let cur = vehicleProgressByBatchId[b.id] != null
+                ? vehicleProgressByBatchId[b.id]
+                : (b.status === 'PICKED_UP' ? 0.65 : 0.32);
+            cur += 0.015;
+            if (cur > 0.94) cur = 0.22;
+            vehicleProgressByBatchId[b.id] = cur;
+
+            const pct = Math.round(cur * 100);
+            const remKm = Math.max(0.1, (b.distanceKm * (1 - cur))).toFixed(2);
+            const remMins = Math.max(1, Math.ceil(b.etaMinutes * (1 - cur)));
+
+            document.querySelectorAll(`[data-gps-fill="${b.id}"]`).forEach(el => { el.style.width = `${pct}%`; });
+            document.querySelectorAll(`[data-gps-icon="${b.id}"]`).forEach(el => { el.style.left = `${pct}%`; });
+            document.querySelectorAll(`[data-gps-text="${b.id}"]`).forEach(el => {
+                el.textContent = `${pct}% • ${remKm} km left (Arriving in ~${remMins} mins)`;
+            });
+        }
     });
+
+    updateLiveVehiclesOnMap();
+    if (activeChatBatchId) {
+        renderActiveChatModal();
+    }
 
     document.querySelectorAll('[data-countdown-id]').forEach(el => {
         const id = el.getAttribute('data-countdown-id');
@@ -1129,6 +1197,121 @@ function tickLiveCountdowns() {
     if (head) {
         const timerEl = document.getElementById('kpiHeadTimer');
         if (timerEl) timerEl.textContent = formatRemainingTime(head.secondsUntilExpiry);
+    }
+}
+
+// ==================== OPTION 1: LIVE MOVING VOLUNTEER VEHICLE ON LEAFLET MAP ====================
+function updateLiveVehiclesOnMap() {
+    if (!mapInstance || !vehicleLayer) return;
+    vehicleLayer.clearLayers();
+
+    appState.batches.forEach(b => {
+        if (b.status !== 'EN_ROUTE' && b.status !== 'PICKED_UP') return;
+        const prog = vehicleProgressByBatchId[b.id] != null ? vehicleProgressByBatchId[b.id] : 0.45;
+        const startLat = b.status === 'EN_ROUTE' ? appState.ngoHub.lat : b.latitude;
+        const startLon = b.status === 'EN_ROUTE' ? appState.ngoHub.lon : b.longitude;
+        const endLat = b.status === 'EN_ROUTE' ? b.latitude : appState.ngoHub.lat;
+        const endLon = b.status === 'EN_ROUTE' ? b.longitude : appState.ngoHub.lon;
+
+        const curLat = startLat + (endLat - startLat) * prog;
+        const curLon = startLon + (endLon - startLon) * prog;
+        const pct = Math.round(prog * 100);
+        const remKm = Math.max(0.1, (b.distanceKm * (1 - prog))).toFixed(2);
+
+        const vehicleMarker = L.marker([curLat, curLon], {
+            icon: L.divIcon({
+                className: '',
+                html: `<div class="live-vehicle-pin">🛵 ${escapeHtml(b.volunteerName || 'Volunteer')} • ${pct}% (${remKm} km)</div>`,
+                iconSize: [190, 26],
+                iconAnchor: [95, 13]
+            })
+        });
+        vehicleMarker.on('click', () => openLiveChatModal(b.id));
+        vehicleLayer.addLayer(vehicleMarker);
+    });
+}
+
+// ==================== OPTION 2: LIVE DONOR <-> VOLUNTEER IN-APP CHAT ====================
+function openLiveChatModal(batchId) {
+    activeChatBatchId = batchId;
+    document.getElementById('chatActiveBatchId').value = batchId;
+    document.getElementById('liveChatModal').classList.remove('hidden');
+    renderActiveChatModal();
+    setTimeout(() => {
+        const box = document.getElementById('chatMessagesContainer');
+        if (box) box.scrollTop = box.scrollHeight;
+    }, 50);
+}
+
+function closeLiveChatModal() {
+    activeChatBatchId = null;
+    document.getElementById('liveChatModal').classList.add('hidden');
+}
+
+function renderActiveChatModal() {
+    if (!activeChatBatchId) return;
+    const b = appState.batches.find(x => x.id === activeChatBatchId);
+    if (!b) return;
+
+    document.getElementById('chatModalTitle').textContent = `💬 Live Chat — ${b.id}: ${b.donorName}`;
+    document.getElementById('chatModalSubtitle').textContent =
+        `Donor Kitchen: ${b.donorName} ↔ NGO Volunteer: ${b.volunteerName || 'Assigned Coordinator'} (${b.claimedByNgo || appState.ngoHub.name})`;
+
+    const box = document.getElementById('chatMessagesContainer');
+    const msgs = b.chatMessages || [];
+    if (msgs.length === 0) {
+        box.innerHTML = `<div style="color: var(--text-muted); text-align:center; margin-top: 75px; font-size:0.82rem;">No messages yet. Send a quick message to coordinate gate entry or pickup!</div>`;
+        return;
+    }
+
+    box.innerHTML = msgs.map(m => {
+        const roleIcon = m.role === 'DONOR' ? '🍽️ DONOR' : '🛵 NGO VOLUNTEER';
+        return `
+            <div class="chat-bubble ${m.role}">
+                <div class="chat-sender">
+                    <span>${roleIcon} • ${escapeHtml(m.sender)}</span>
+                    <span>${formatTimeAgo(Number(m.ts) || Date.now())}</span>
+                </div>
+                <div>${escapeHtml(m.text)}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function sendQuickChatReply(text) {
+    const input = document.getElementById('chatMessageInput');
+    if (input) input.value = text;
+    await submitChatMessage(new Event('submit'));
+}
+
+async function submitChatMessage(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const batchId = activeChatBatchId || document.getElementById('chatActiveBatchId').value;
+    const input = document.getElementById('chatMessageInput');
+    const message = input ? input.value.trim() : '';
+    if (!batchId || !message) return;
+
+    const b = appState.batches.find(x => x.id === batchId);
+    const isDonor = appState.currentRole === 'DONOR';
+    const senderRole = isDonor ? 'DONOR' : 'NGO';
+    const senderName = isDonor
+        ? (b ? b.donorName : (document.getElementById('donorLoginOrg')?.value || 'Donor Kitchen'))
+        : (b && b.volunteerName ? `${b.volunteerName} (${b.claimedByNgo || 'NGO'})` : `Volunteer (${appState.ngoHub.name.split('—')[0].trim()})`);
+
+    if (input) input.value = '';
+
+    try {
+        await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ batchId, senderRole, senderName, message })
+        });
+        await fetchBackendState(false);
+        renderActiveChatModal();
+        const box = document.getElementById('chatMessagesContainer');
+        if (box) box.scrollTop = box.scrollHeight;
+    } catch (err) {
+        alert('Could not send message: ' + err.message);
     }
 }
 

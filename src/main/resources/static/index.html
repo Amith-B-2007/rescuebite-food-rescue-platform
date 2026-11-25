@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet Interactive Map CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-    <link rel="stylesheet" href="/css/styles.css?v=9" />
+    <link rel="stylesheet" href="/css/styles.css?v=10" />
 </head>
 <body>
     <!-- ==================== DUAL ROLE LOGIN SCREEN (FIRST SCREEN) ==================== -->
@@ -689,8 +689,39 @@
         </div>
     </div>
 
+    <!-- ==================== LIVE DONOR <-> VOLUNTEER CHAT MODAL ==================== -->
+    <div id="liveChatModal" class="modal-backdrop hidden">
+        <div class="modal-card chat-modal-card">
+            <div class="modal-header">
+                <div>
+                    <h3 id="chatModalTitle">💬 Live Donor &harr; Volunteer Chat</h3>
+                    <div id="chatModalSubtitle" style="font-size: 0.76rem; color: var(--text-secondary);">Real-time pickup &amp; gate handover coordination</div>
+                </div>
+                <button class="modal-close" onclick="closeLiveChatModal()">&times;</button>
+            </div>
+
+            <div id="chatMessagesContainer" class="chat-messages-box">
+                <!-- Populated dynamically -->
+            </div>
+
+            <div class="chat-quick-replies">
+                <span class="preset-label">Quick Reply:</span>
+                <button type="button" class="btn-chip" onclick="sendQuickChatReply('🛵 On my way! Live GPS active, arriving in ~8 mins.')">🛵 Arriving in 8m</button>
+                <button type="button" class="btn-chip" onclick="sendQuickChatReply('📍 Reached near main gate, please confirm entry point.')">📍 Reached Gate</button>
+                <button type="button" class="btn-chip" onclick="sendQuickChatReply('🍽️ Food is hot-packed in sealed containers at Gate 2.')">🍽️ Packed at Gate 2</button>
+                <button type="button" class="btn-chip" onclick="sendQuickChatReply('🔐 Please keep the 4-digit Handover OTP ready.')">🔐 Keep OTP Ready</button>
+            </div>
+
+            <form id="liveChatForm" onsubmit="submitChatMessage(event)" class="chat-input-row">
+                <input type="hidden" id="chatActiveBatchId" />
+                <input type="text" id="chatMessageInput" required placeholder="Type a live message to Donor / Volunteer..." autocomplete="off" />
+                <button type="submit" class="btn btn-primary">Send &rarr;</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="/js/app.js?v=9"></script>
+    <script src="/js/app.js?v=10"></script>
 </body>
 </html>

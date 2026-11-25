@@ -1436,3 +1436,136 @@ code, pre, .mono-tag, .mono-badge {
     font-weight: 700;
     text-align: center;
 }
+
+/* ==================== OPTION 1: LIVE MOVING VOLUNTEER VEHICLE GPS TRACKER ==================== */
+.live-vehicle-pin {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.65);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.live-gps-track-bar {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 10px;
+}
+
+.gps-track-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.76rem;
+    color: #93c5fd;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.gps-road-line {
+    position: relative;
+    height: 8px;
+    background: #1e293b;
+    border-radius: 999px;
+    overflow: visible;
+    margin: 10px 0 4px;
+}
+
+.gps-road-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #10b981);
+    border-radius: 999px;
+    transition: width 0.8s linear;
+}
+
+.gps-vehicle-icon {
+    position: absolute;
+    top: -11px;
+    transform: translateX(-50%);
+    font-size: 1.1rem;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+    transition: left 0.8s linear;
+}
+
+/* ==================== OPTION 2: LIVE DONOR <-> VOLUNTEER IN-APP CHAT ==================== */
+.chat-modal-card {
+    max-width: 560px;
+}
+
+.chat-messages-box {
+    background: #080e1a;
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 12px;
+    height: 270px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.chat-bubble {
+    max-width: 84%;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 0.81rem;
+    line-height: 1.4;
+}
+
+.chat-bubble.DONOR {
+    align-self: flex-start;
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #ecfdf5;
+}
+
+.chat-bubble.NGO {
+    align-self: flex-end;
+    background: rgba(59, 130, 246, 0.18);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: #eff6ff;
+}
+
+.chat-sender {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.chat-quick-replies {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.chat-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.chat-input-row input {
+    flex: 1;
+    background: #0b1221;
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+}
