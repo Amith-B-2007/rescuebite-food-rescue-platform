@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: rescuebite-food-rescue-platform
+    runtime: docker
+    plan: free
+    autoDeploy: true
